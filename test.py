@@ -36,7 +36,7 @@ if __name__ == '__main__':
     transform = transforms.Compose(
         [transforms.ToTensor(),
          transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-    net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=6, depth=2, heads=8, mlp_dim=8)
+    net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=768, depth=12, heads=12, mlp_dim=3072)
     net.load_state_dict(torch.load(weight_path))
     net.eval()
     datasets = torchvision.datasets.CIFAR10('./datasets', train=True, transform=transform, download=True)
