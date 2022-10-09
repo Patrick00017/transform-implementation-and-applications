@@ -49,9 +49,9 @@ if __name__ == '__main__':
     datasets = 'cifar-10'
     if datasets == 'cifar-10':
         image_size = (32, 32)
-    net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=768, depth=12, heads=12, mlp_dim=3072)
+    net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=128, depth=12, heads=32, mlp_dim=256)
     criterion = nn.CrossEntropyLoss()
-    lr = 0.1
-    optimizer = torch.optim.SGD(net.parameters(), lr=lr)
+    lr = 0.01
+    optimizer = torch.optim.SGD(net.parameters(), lr=lr, weight_decay=1e-5)
     train(datasets='cifar-10', epoch_num=200, optimizer=optimizer, net=net, batch_size=2, criterion=criterion,
           weight_path=weight_path)
