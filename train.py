@@ -10,6 +10,9 @@ from torchvision.transforms import transforms
 
 
 def train(datasets, epoch_num, optimizer, net, batch_size, criterion, weight_path):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    network = net.to(device)
+    loss_function = criterion.to(device)
     transform = transforms.Compose(
         [transforms.ToTensor(),
          transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
@@ -27,9 +30,11 @@ def train(datasets, epoch_num, optimizer, net, batch_size, criterion, weight_pat
         total_loss = 0
         for batch in train_loader:
             inputs, labels = batch
+            inputs = inputs.to(device)
+            labels = labels.to(device)
             optimizer.zero_grad()
-            yhat = net(inputs)
-            loss = criterion(yhat, labels)
+            yhat = network(inputs)
+            loss = loss_function(yhat, labels)
             loss.backward()
             optimizer.step()
 
@@ -39,7 +44,7 @@ def train(datasets, epoch_num, optimizer, net, batch_size, criterion, weight_pat
         total_time_cost += end - start
         print(f'epoch: {epoch}, mean loss: {total_loss / sample_num}, time: {end - start} seconds')
     print(f'training over. total time cost: {total_time_cost}')
-    torch.save(net.state_dict(), weight_path)
+    torch.save(network.state_dict(), weight_path)
     print('saving model weight successfully.')
 
 
@@ -49,9 +54,9 @@ if __name__ == '__main__':
     datasets = 'cifar-10'
     if datasets == 'cifar-10':
         image_size = (32, 32)
-    net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=128, depth=12, heads=32, mlp_dim=256)
+    net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=64, depth=3, heads=32, mlp_dim=128)
     criterion = nn.CrossEntropyLoss()
     lr = 0.01
     optimizer = torch.optim.SGD(net.parameters(), lr=lr, weight_decay=1e-5)
-    train(datasets='cifar-10', epoch_num=200, optimizer=optimizer, net=net, batch_size=2, criterion=criterion,
+    train(datasets='cifar-10', epoch_num=20, optimizer=optimizer, net=net, batch_size=2, criterion=criterion,
           weight_path=weight_path)

@@ -19,9 +19,12 @@ def imshow(img):
 
 
 def test(image, label, net):
-    pred = net(image)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    network = net.to(device)
+    img = image.to(device)
+    pred = network(img)
     print(pred.shape)
-    imshow(image)
+    imshow(img)
     class_idx = torch.max(pred, 1).indices.item()
     # print(class_idx.indices.item())
     class_name = classes[class_idx]
