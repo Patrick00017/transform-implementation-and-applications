@@ -10,7 +10,7 @@ from torchvision.transforms import transforms
 
 
 def train(datasets, epoch_num, optimizer, net, batch_size, criterion, weight_path):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     network = net.to(device)
     loss_function = criterion.to(device)
     transform = transforms.Compose(
@@ -54,9 +54,9 @@ if __name__ == '__main__':
     datasets = 'cifar-10'
     if datasets == 'cifar-10':
         image_size = (32, 32)
-    net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=64, depth=3, heads=32, mlp_dim=128)
+    net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=128, depth=3, heads=64, mlp_dim=256)
     criterion = nn.CrossEntropyLoss()
     lr = 0.01
     optimizer = torch.optim.SGD(net.parameters(), lr=lr, weight_decay=1e-5)
-    train(datasets='cifar-10', epoch_num=20, optimizer=optimizer, net=net, batch_size=2, criterion=criterion,
+    train(datasets='cifar-10', epoch_num=100, optimizer=optimizer, net=net, batch_size=128, criterion=criterion,
           weight_path=weight_path)
