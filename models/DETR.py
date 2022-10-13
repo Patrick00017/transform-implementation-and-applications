@@ -60,6 +60,16 @@ class DETR(nn.Module):
         return {'pred_class': pred_class, 'pred_bbox': pred_bbox}
 
 
+def generate_labels(pred_class, pred_bbox, gt_boxes):
+    '''
+    this function is used to generate ground truth pair with the prediction.
+    :param pred_class:
+    :param pred_bbox:
+    :param gt_boxes:
+    :return:
+    '''
+
+
 def train(batch_size=1, epoches=100, learning_rate=0.01, weight_decay=1e-5):
     # init device
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -95,7 +105,7 @@ def train(batch_size=1, epoches=100, learning_rate=0.01, weight_decay=1e-5):
             # gtboxes: (gt_box_number, clsx1y1x2y2)
             # pred_class: (batch_size, objectquery, 21(class number))
             # pred_bbox: (batch_size, objectquery, x1y1x2y2)
-            break
+            gt_class, gt_bbox = generate_labels(pred_class, pred_bbox, gt_boxes)
 
 
 if __name__ == '__main__':
