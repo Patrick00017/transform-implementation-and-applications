@@ -1,6 +1,12 @@
+import time
+
 import torch
 import torchvision
 import torch.nn as nn
+from torch.optim import SGD
+from torch.utils.data import DataLoader
+from dataset import VOC2007
+from losses.Hungarian import hungarian_loss
 
 
 class DETR(nn.Module):
@@ -21,7 +27,7 @@ class DETR(nn.Module):
         self.linear_class = nn.Linear(hidden_dims, num_classes + 1)
         self.linear_bbox = nn.Linear(hidden_dims, 4)
 
-        # object queries
+        # object queries, for now the number of object query is  ->   100
         self.object_queries = nn.Parameter(torch.rand(100, hidden_dims))
 
         # spatial positional encodings
@@ -54,6 +60,45 @@ class DETR(nn.Module):
         return {'pred_class': pred_class, 'pred_bbox': pred_bbox}
 
 
-if __name__ == '__main__':
+def train(batch_size=1, epoches=100, learning_rate=0.01, weight_decay=1e-5):
+    # init device
+    device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+
+    # prepare the datasets
+    dataset_root_path = 'D:\\code\\python\\datasets\\VOCdevkit\\VOC2007'
+    train_data = VOC2007(root_path=dataset_root_path)
+    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, collate_fn=lambda x: x)
+
+    # network
     net = DETR(num_classes=20)
-    print(net()['pred_class'].shape, net()['pred_bbox'].shape)
+    net = net.to(device)
+
+    # optimizer
+    optimizer = SGD(net.parameters(), lr=learning_rate, weight_decay=weight_decay)
+
+    # loss function use hungarian loss to criterion
+    criterian = hungarian_loss
+
+    for epoch in range(1, epoches + 1):
+        start_time = time.time()
+        image_num = 0
+        total_loss = 0
+        for i, batch in enumerate(train_loader):
+            image_num += 1
+            image = batch[0][0]
+            height, width = batch[0][2], batch[0][3]
+            image = image.unsqueeze(0)
+            gt_boxes = torch.tensor(batch[0][1])
+            output = net(image)
+            pred_class, pred_bbox = output['pred_class'], output['pred_bbox']
+            # until this point
+            # gtboxes: (gt_box_number, clsx1y1x2y2)
+            # pred_class: (batch_size, objectquery, 21(class number))
+            # pred_bbox: (batch_size, objectquery, x1y1x2y2)
+            break
+
+
+if __name__ == '__main__':
+    # net = DETR(num_classes=20)
+    # print(net()['pred_class'].shape, net()['pred_bbox'].shape)
+    train()
