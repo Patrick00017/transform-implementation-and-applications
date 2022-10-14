@@ -1,3 +1,4 @@
+import os
 import time
 
 import torch
@@ -8,6 +9,8 @@ from torch.utils.data import DataLoader
 from dataset import VOC2007
 from losses.Hungarian import hungarian_loss, match_loss
 
+
+weight_path = './weights/detr-voc2007.pth'
 
 class DETR(nn.Module):
     def __init__(self, num_classes, hidden_dims=256, nheads=8, num_encoder_layer=6, num_decoder_layer=6):
@@ -70,15 +73,38 @@ def generate_labels(pred_class, pred_bbox, gt_boxes):
     '''
     batch_size, object_queries, _ = pred_class.shape
     print(f'batch_size: {batch_size}, object queries: {object_queries}')
-    gt_cls = gt_boxes[0, :, 0]
-    gt_box = gt_boxes[0, :, 1:5]
+    num_gt_box = gt_boxes.shape[0]
+    gt_cls = gt_boxes[:, 0]
+    gt_box = gt_boxes[:, 1:5]
     print(f'gt cls: {gt_cls.shape}, gt box: {gt_box.shape}')
-    gt_cls_target = torch.zeros_like(pred_class)
+    # (B, queries, cls or x1y1x2y2)
+    gt_cls_target = torch.zeros((batch_size, object_queries, 1))
     gt_box_target = torch.zeros_like(pred_bbox)
-    return gt_cls_target, gt_box_target
+
+    # give every gt box best pair.
+    allocated_index = torch.zeros((object_queries, 1))
+    for i in range(num_gt_box):
+        max_match_loss = 0
+        best_match_index = -1
+        gt = gt_boxes[i]
+        for j in range(object_queries):
+            # if this object query is allocated, then pass
+            if allocated_index[j] == 1:
+                continue
+            pred_c = pred_class[0, j]
+            pred_b = pred_bbox[0, j]
+            match_l = match_loss(pred_cls=pred_c, pred_bbox=pred_b, gt_cls=gt[0], gt_box=gt[1:5])
+            if match_l > max_match_loss:
+                max_match_loss = match_l
+                best_match_index = j
+        # find the max loss, then set targets for it.
+        gt_cls_target[0, best_match_index, 0] = gt[0]
+        gt_box_target[0, best_match_index, :] = gt[1:5]
+        allocated_index[best_match_index] = 1
+    return gt_cls_target, gt_box_target, allocated_index
 
 
-def train(batch_size=1, epoches=100, learning_rate=0.01, weight_decay=1e-5):
+def train(batch_size=1, epoches=1, learning_rate=0.01, weight_decay=1e-5):
     # init device
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -90,13 +116,15 @@ def train(batch_size=1, epoches=100, learning_rate=0.01, weight_decay=1e-5):
     # network
     net = DETR(num_classes=20)
     net = net.to(device)
+    if os.path.exists(weight_path):
+        net.load_state_dict(torch.load(weight_path))
 
     # optimizer
     optimizer = SGD(net.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
     # loss function use hungarian loss to criterion
     criterian = hungarian_loss
-
+    print('start training...')
     for epoch in range(1, epoches + 1):
         start_time = time.time()
         image_num = 0
@@ -106,14 +134,31 @@ def train(batch_size=1, epoches=100, learning_rate=0.01, weight_decay=1e-5):
             image = batch[0][0]
             height, width = batch[0][2], batch[0][3]
             image = image.unsqueeze(0)
+            image = image.to(device)
             gt_boxes = torch.tensor(batch[0][1])
+            gt_boxes = gt_boxes.to(device)
+
+            optimizer.zero_grad()
             output = net(image)
             pred_class, pred_bbox = output['pred_class'], output['pred_bbox']
             # until this point
             # gtboxes: (gt_box_number, clsx1y1x2y2)
             # pred_class: (batch_size, objectquery, 21(class number))
             # pred_bbox: (batch_size, objectquery, x1y1x2y2)
-            gt_class, gt_bbox = generate_labels(pred_class, pred_bbox, gt_boxes)
+
+            # gt_class and gt_bbox shape is like pred_class and pred_bbox, and mask=1 is where gtbox locate
+            gt_class, gt_bbox, mask = generate_labels(pred_class, pred_bbox, gt_boxes)
+            l = hungarian_loss(pred_cls=pred_class, pred_bbox=pred_bbox, gt_cls=gt_class, gt_box=gt_bbox, mask=mask,
+                               lou_superparams=1.5, l1_superparams=1)
+            l.backward()
+            optimizer.step()
+            total_loss += l.item()
+        end_time = time.time()
+        epoch_time = end_time - start_time
+        print(f'epoch: {epoch}, mean loss: {total_loss / image_num}, time: {epoch_time} seconds')
+    print('train over.')
+    torch.save(net.state_dict(), weight_path)
+    print('save weights successfully.')
 
 
 if __name__ == '__main__':
