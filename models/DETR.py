@@ -68,6 +68,7 @@ def generate_labels(pred_class, pred_bbox, gt_boxes):
     :param gt_boxes:
     :return:
     '''
+    pass
 
 
 def train(batch_size=1, epoches=100, learning_rate=0.01, weight_decay=1e-5):
