@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.optim import SGD
 from torch.utils.data import DataLoader
 from dataset import VOC2007
-from losses.Hungarian import hungarian_loss
+from losses.Hungarian import hungarian_loss, match_loss
 
 
 class DETR(nn.Module):
@@ -68,7 +68,14 @@ def generate_labels(pred_class, pred_bbox, gt_boxes):
     :param gt_boxes:
     :return:
     '''
-    pass
+    batch_size, object_queries, _ = pred_class.shape
+    print(f'batch_size: {batch_size}, object queries: {object_queries}')
+    gt_cls = gt_boxes[0, :, 0]
+    gt_box = gt_boxes[0, :, 1:5]
+    print(f'gt cls: {gt_cls.shape}, gt box: {gt_box.shape}')
+    gt_cls_target = torch.zeros_like(pred_class)
+    gt_box_target = torch.zeros_like(pred_bbox)
+    return gt_cls_target, gt_box_target
 
 
 def train(batch_size=1, epoches=100, learning_rate=0.01, weight_decay=1e-5):
