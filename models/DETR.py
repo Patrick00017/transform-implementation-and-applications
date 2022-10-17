@@ -4,12 +4,13 @@ import time
 import torch
 import torchvision
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.optim import SGD
 from torch.utils.data import DataLoader
 from dataset import VOC2007
 from losses.Hungarian import hungarian_loss, match_loss
 
-weight_path = './weights/detr-voc2007.pth'
+weight_path = '../weights/detr-voc2007.pth'
 
 
 class DETR(nn.Module):
@@ -58,7 +59,7 @@ class DETR(nn.Module):
                              self.object_queries.unsqueeze(1)) \
             .transpose(0, 1)
         pred_class = self.linear_class(h)
-        pred_bbox = self.linear_bbox(h)
+        pred_bbox = F.sigmoid(self.linear_bbox(h))
         # output shape: torch.Size([1, 100, 21]) torch.Size([1, 100, 4])
         return {'pred_class': pred_class, 'pred_bbox': pred_bbox}
 
@@ -72,11 +73,10 @@ def generate_labels(pred_class, pred_bbox, gt_boxes):
     :return:
     '''
     batch_size, object_queries, _ = pred_class.shape
-    print(f'batch_size: {batch_size}, object queries: {object_queries}')
+    # print(f'batch_size: {batch_size}, object queries: {object_queries}')
     num_gt_box = gt_boxes.shape[0]
     gt_cls = gt_boxes[:, 0]
     gt_box = gt_boxes[:, 1:5]
-    print(f'gt cls: {gt_cls.shape}, gt box: {gt_box.shape}')
     # (B, queries, cls or x1y1x2y2)
     gt_cls_target = torch.zeros((batch_size, object_queries, 1))
     gt_box_target = torch.zeros_like(pred_bbox)
@@ -152,6 +152,7 @@ def train_voc(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-5):
                           lou_superparams=1.5, l1_superparams=1)
             l.backward()
             optimizer.step()
+            print(f'batch loss: {l.item()}')
             total_loss += l.item()
         end_time = time.time()
         epoch_time = end_time - start_time
@@ -222,7 +223,7 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-5):
             # gt_class and gt_bbox shape is like pred_class and pred_bbox, and mask=1 is where gtbox locate
             gt_class, gt_bbox, mask = generate_labels(pred_class, pred_bbox, gt_boxes)
             l = criterian(pred_cls=pred_class, pred_bbox=pred_bbox, gt_cls=gt_class, gt_box=gt_bbox, mask=mask,
-                               lou_superparams=1.5, l1_superparams=1)
+                          lou_superparams=1.5, l1_superparams=1)
             l.backward()
             optimizer.step()
             total_loss += l.item()
