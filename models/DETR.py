@@ -109,7 +109,7 @@ def train_voc(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-5):
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
     # prepare the datasets
-    dataset_root_path = 'D:\\code\\python\\datasets\\VOCdevkit\\VOC2007'
+    dataset_root_path = '../datasets/VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007'
     train_data = VOC2007(root_path=dataset_root_path)
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, collate_fn=lambda x: x)
 

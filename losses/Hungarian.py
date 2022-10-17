@@ -25,7 +25,7 @@ def match_loss(pred_cls, pred_bbox, gt_cls, gt_box):
     :param gt_box: (4)
     :return:
     """
-    aim_class = gt_cls[0]
+    aim_class = gt_cls.item()
     probability = F.softmax(pred_cls, dim=-1)
     aim_class_probability = probability[aim_class]
     class_loss = 1 - aim_class_probability
