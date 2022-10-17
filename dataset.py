@@ -2,7 +2,6 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import torchvision
 import numpy as np
-import cv2  # 使用PIL进行图片处理也可以
 import xml.etree.ElementTree as ET  # 用来解析.xml文件
 
 #  存储Voc数据集中的类别标签的字典 没打全
@@ -68,18 +67,19 @@ class VOC2007(Dataset):
                 box.append(cur_pt)
 
             # normalize
-            # box_normalize = np.array(box) / [width, height, width, height]
-            # box_normalize = box_normalize.tolist()
+            box_normalize = np.array(box) / [width, height, width, height]
+            box_normalize = box_normalize.tolist()
 
             # not normalize
-            box_normalize = np.array(box)
+            # box_normalize = np.array(box)
+
             cls_and_bbox.append(box_normalize[0])
             cls_and_bbox.append(box_normalize[1])
             cls_and_bbox.append(box_normalize[2])
             cls_and_bbox.append(box_normalize[3])
             res.append(cls_and_bbox)
-        img = torchvision.transforms.Resize([500, 400])(img)
-        return img, res, height, width
+        img = torchvision.transforms.Resize([500, 500])(img)
+        return img, res, 500, 500
 
     def __len__(self):
         data_length = len(self.img_idx)

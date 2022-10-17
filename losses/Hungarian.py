@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-from GLoU import GLoU
+from losses.GLoU import GLoU
 
 
 def bounding_box_loss(pred_bbox, gtbox, lou_superparams, l1_superparams):
