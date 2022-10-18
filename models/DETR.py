@@ -64,6 +64,11 @@ class DETR(nn.Module):
         return {'pred_class': pred_class, 'pred_bbox': pred_bbox}
 
 
+def xavior_init(layer):
+    if isinstance(layer, nn.Linear):
+        torch.nn.init.xavier_uniform(layer.weight)
+        layer.bias.data.fill_(0.01)
+
 def generate_labels(pred_class, pred_bbox, gt_boxes):
     '''
     this function is used to generate ground truth pair with the prediction.
@@ -104,7 +109,7 @@ def generate_labels(pred_class, pred_bbox, gt_boxes):
     return gt_cls_target, gt_box_target, allocated_index
 
 
-def train_voc(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-5):
+def train_voc(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5):
     # init device
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -118,6 +123,8 @@ def train_voc(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-5):
     net = net.to(device)
     if os.path.exists(weight_path):
         net.load_state_dict(torch.load(weight_path))
+    else:
+        net.apply(xavior_init)
 
     # optimizer
     optimizer = SGD(net.parameters(), lr=learning_rate, weight_decay=weight_decay)
