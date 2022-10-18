@@ -4,14 +4,15 @@ import time
 import torch
 import torchvision
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.optim import SGD
 from torch.utils.data import DataLoader
 from dataset import VOC2007
 from losses.Hungarian import hungarian_loss, match_loss
 
-weight_path = './weights/detr-voc2007.pth'
+weight_path = '../weights/detr-voc2007.pth'
 
-
+device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 class DETR(nn.Module):
     def __init__(self, num_classes, hidden_dims=256, nheads=8, num_encoder_layer=6, num_decoder_layer=6):
         super(DETR, self).__init__()
@@ -58,9 +59,15 @@ class DETR(nn.Module):
                              self.object_queries.unsqueeze(1)) \
             .transpose(0, 1)
         pred_class = self.linear_class(h)
-        pred_bbox = self.linear_bbox(h)
+        pred_bbox = F.sigmoid(self.linear_bbox(h))
         # output shape: torch.Size([1, 100, 21]) torch.Size([1, 100, 4])
         return {'pred_class': pred_class, 'pred_bbox': pred_bbox}
+
+
+def xavior_init(layer):
+    if isinstance(layer, nn.Linear):
+        torch.nn.init.xavier_uniform(layer.weight)
+        layer.bias.data.fill_(0.01)
 
 
 def generate_labels(pred_class, pred_bbox, gt_boxes):
@@ -72,17 +79,14 @@ def generate_labels(pred_class, pred_bbox, gt_boxes):
     :return:
     '''
     batch_size, object_queries, _ = pred_class.shape
-    print(f'batch_size: {batch_size}, object queries: {object_queries}')
+    # print(f'batch_size: {batch_size}, object queries: {object_queries}')
     num_gt_box = gt_boxes.shape[0]
-    gt_cls = gt_boxes[:, 0]
-    gt_box = gt_boxes[:, 1:5]
-    print(f'gt cls: {gt_cls.shape}, gt box: {gt_box.shape}')
     # (B, queries, cls or x1y1x2y2)
-    gt_cls_target = torch.zeros((batch_size, object_queries, 1))
-    gt_box_target = torch.zeros_like(pred_bbox)
+    gt_cls_target = torch.zeros((batch_size, object_queries, 1)).to(device)
+    gt_box_target = torch.zeros_like(pred_bbox).to(device)
 
     # give every gt box best pair.
-    allocated_index = torch.zeros((object_queries, 1))
+    allocated_index = torch.zeros((object_queries, 1)).to(device)
     for i in range(num_gt_box):
         max_match_loss = 0
         best_match_index = -1
@@ -104,7 +108,7 @@ def generate_labels(pred_class, pred_bbox, gt_boxes):
     return gt_cls_target, gt_box_target, allocated_index
 
 
-def train_voc(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-5):
+def train_voc(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5):
     # init device
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -118,6 +122,8 @@ def train_voc(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-5):
     net = net.to(device)
     if os.path.exists(weight_path):
         net.load_state_dict(torch.load(weight_path))
+    else:
+        net.apply(xavior_init)
 
     # optimizer
     optimizer = SGD(net.parameters(), lr=learning_rate, weight_decay=weight_decay)
@@ -130,6 +136,7 @@ def train_voc(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-5):
         image_num = 0
         total_loss = 0
         for i, batch in enumerate(train_loader):
+            batch_start_time = time.time()
             image_num += 1
             image = batch[0][0]
             height, width = batch[0][2], batch[0][3]
@@ -147,12 +154,23 @@ def train_voc(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-5):
             # pred_bbox: (batch_size, objectquery, x1y1x2y2)
 
             # gt_class and gt_bbox shape is like pred_class and pred_bbox, and mask=1 is where gtbox locate
+            generate_start_time = time.time()
             gt_class, gt_bbox, mask = generate_labels(pred_class, pred_bbox, gt_boxes)
+            gt_class = gt_class.to(device)
+            gt_bbox = gt_bbox.to(device)
+            mask = mask.to(device)
+            generate_end_time = time.time()
+            criterian_start_time = time.time()
             l = criterian(pred_cls=pred_class, pred_bbox=pred_bbox, gt_cls=gt_class, gt_box=gt_bbox, mask=mask,
                           lou_superparams=1.5, l1_superparams=1)
+            criterian_end_time = time.time()
             l.backward()
             optimizer.step()
             total_loss += l.item()
+            batch_end_time = time.time()
+            print(f'batch loss: {l.item()}, batch time: {batch_end_time-batch_start_time}s')
+            print(f'generate label time: {generate_end_time-generate_start_time}s')
+            print(f'criterion time: {criterian_end_time-criterian_start_time}s')
         end_time = time.time()
         epoch_time = end_time - start_time
         print(f'epoch: {epoch}, mean loss: {total_loss / image_num}, time: {epoch_time} seconds')
@@ -222,7 +240,7 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-5):
             # gt_class and gt_bbox shape is like pred_class and pred_bbox, and mask=1 is where gtbox locate
             gt_class, gt_bbox, mask = generate_labels(pred_class, pred_bbox, gt_boxes)
             l = criterian(pred_cls=pred_class, pred_bbox=pred_bbox, gt_cls=gt_class, gt_box=gt_bbox, mask=mask,
-                               lou_superparams=1.5, l1_superparams=1)
+                          lou_superparams=1.5, l1_superparams=1)
             l.backward()
             optimizer.step()
             total_loss += l.item()
@@ -237,4 +255,4 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-5):
 if __name__ == '__main__':
     # net = DETR(num_classes=20)
     # print(net()['pred_class'].shape, net()['pred_bbox'].shape)
-    train_voc()
+    train_voc(epoches=100)

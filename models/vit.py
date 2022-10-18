@@ -1,7 +1,11 @@
 import torch
 import torch.nn as nn
 import einops
+import torchvision
 from einops.layers.torch import Rearrange
+from torch.utils.data import DataLoader
+from torchvision.transforms import transforms
+import torch.nn.functional as F
 
 
 def pair(t):
@@ -146,8 +150,39 @@ class ViT(nn.Module):
         return self.mlp_head(x)
 
 
+def evaluate(weight_path):
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    image_size = (32, 32)
+    net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=128, depth=3, heads=64, mlp_dim=256)
+    net = net.to(device)
+    transform = transforms.Compose(
+        [transforms.ToTensor(),
+         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    net.load_state_dict(torch.load(weight_path))
+    net.eval()
+
+    batch_size = 128
+    datasets = torchvision.datasets.CIFAR10('../datasets', train=False, transform=transform, download=True)
+    test_loader = DataLoader(datasets, batch_size=batch_size, shuffle=True, num_workers=2)
+    total_right_nums = 0
+    total_nums = 0
+    with torch.no_grad():
+        for batch in test_loader:
+            images, labels = batch
+            images = images.to(device)
+            labels = labels.to(device)
+            image_num = images.shape[0]
+            total_nums += image_num
+            preds = net(images)
+            preds = F.softmax(preds, dim=-1)
+            preds = torch.argmax(preds, dim=-1)
+            for i in range(image_num):
+                if labels[i] == preds[i]:
+                    total_right_nums += 1
+    return total_right_nums / total_nums
+
+
 if __name__ == '__main__':
-    image = torch.rand(1, 3, 132, 132)
-    net = ViT(image_size=image.shape[2], patch_size=22, num_classes=10, dim=12, depth=3, heads=8, mlp_dim=8)
-    pred = net(image)
-    print(pred.shape)
+    weight_path = '../weights/vit-cifar-10.pth'
+    mean_accurate = evaluate(weight_path=weight_path)
+    print(mean_accurate)

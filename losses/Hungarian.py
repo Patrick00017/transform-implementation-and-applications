@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from losses.GLoU import GLoU
 
-
+device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 def bounding_box_loss(pred_bbox, gtbox, lou_superparams, l1_superparams):
     """
     box loss function for DETR
@@ -49,12 +49,13 @@ def hungarian_loss(pred_cls, pred_bbox, gt_cls, gt_box, mask, lou_superparams=1.
     """
 
     cls_criterion = torch.nn.CrossEntropyLoss()
-    gt_cls = gt_cls.long().squeeze(-1)[0]
-    pred_cls = pred_cls[0]
+    cls_criterion = cls_criterion.to(device)
+    gt_cls = gt_cls.long().squeeze(-1)[0].to(device)
+    pred_cls = pred_cls[0].to(device)
     # print(f'pred_cls: {pred_cls.shape}, gt_cls: {gt_cls.shape}')
     cls_loss = cls_criterion(pred_cls, gt_cls)
 
-    total_bbox_loss = torch.tensor(0).float()
+    total_bbox_loss = torch.tensor(0).float().to(device)
     for i in range(mask.shape[0]):
         if mask[i, 0] == 1:
             pred_b = pred_bbox[0, i, :]
