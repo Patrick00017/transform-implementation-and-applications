@@ -50,8 +50,8 @@ def hungarian_loss(pred_cls, pred_bbox, gt_cls, gt_box, mask, lou_superparams=1.
 
     cls_criterion = torch.nn.CrossEntropyLoss()
     cls_criterion = cls_criterion.to(device)
-    gt_cls = gt_cls.long().squeeze(-1)[0].to(device)
-    pred_cls = pred_cls[0].to(device)
+    gt_cls = gt_cls.long().squeeze(-1)[0]
+    pred_cls = pred_cls[0]
     # print(f'pred_cls: {pred_cls.shape}, gt_cls: {gt_cls.shape}')
     cls_loss = cls_criterion(pred_cls, gt_cls)
 
