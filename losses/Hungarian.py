@@ -25,7 +25,7 @@ def match_loss(pred_cls, pred_bbox, gt_cls, gt_box):
     :param gt_box: (4)
     :return:
     """
-    aim_class = gt_cls.item()
+    aim_class = gt_cls.int().item()
     probability = F.softmax(pred_cls, dim=-1)
     aim_class_probability = probability[aim_class]
     class_loss = 1 - aim_class_probability
@@ -49,6 +49,9 @@ def hungarian_loss(pred_cls, pred_bbox, gt_cls, gt_box, mask, lou_superparams=1.
     """
 
     cls_criterion = torch.nn.CrossEntropyLoss()
+    gt_cls = gt_cls.long().squeeze(-1)[0]
+    pred_cls = pred_cls[0]
+    # print(f'pred_cls: {pred_cls.shape}, gt_cls: {gt_cls.shape}')
     cls_loss = cls_criterion(pred_cls, gt_cls)
 
     total_bbox_loss = torch.tensor(0).float()
