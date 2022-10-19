@@ -178,8 +178,6 @@ def evaluate(weight_path):
             image_num = images.shape[0]
             total_nums += image_num
             preds = net(images)
-            labels = labels.to('cpu')
-            preds = preds.to('cpu')
             preds = F.softmax(preds, dim=-1)
             preds = torch.argmax(preds, dim=-1)
             y.extend(labels.tolist())
@@ -188,14 +186,15 @@ def evaluate(weight_path):
                 if labels[i] == preds[i]:
                     total_right_nums += 1
 
-    data = np.zeros(len(yhat), len(y))
+    data = np.zeros((len(yhat), len(y)))
     for i, a in enumerate(yhat):
         for j, b in enumerate(y):
             if a == b:
-                data[i, j] = 1
+                data[i, j] = 1.0
+    print(data)
     fig, ax = plt.subplots()
     # ax.scatter(yhat, y, s=sizes, c=colors, vmin=0, vmax=100)
-    plt.imshow(data)
+    plt.imshow(data, cmap='gray')
     plt.show()
     return total_right_nums / total_nums
 
