@@ -20,12 +20,11 @@ class Resnet50(nn.Module):
         super().__init__()
         self.num_classes = num_classes
         self.backbone = torchvision.models.resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
-        del self.backbone.fc
-        self.fc = nn.Linear(2048, self.num_classes)
+        self.backbone.fc = nn.Linear(2048, self.num_classes)
+        # self.dense = nn.Linear(2048, self.num_classes)
 
     def forward(self, x):
         x = self.backbone(x)
-        x = self.fc(x)
         return x
 
 
@@ -117,4 +116,5 @@ def evaluate(weight_path):
 
 if __name__ == '__main__':
     finetune()
-    evaluate(weight_path)
+    precition = evaluate(weight_path)
+    print(precition)
