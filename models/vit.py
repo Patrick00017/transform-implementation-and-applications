@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import einops
@@ -6,6 +7,7 @@ from einops.layers.torch import Rearrange
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
 
 
 def pair(t):
@@ -166,6 +168,8 @@ def evaluate(weight_path):
     test_loader = DataLoader(datasets, batch_size=batch_size, shuffle=True, num_workers=2)
     total_right_nums = 0
     total_nums = 0
+    y = []
+    yhat = []
     with torch.no_grad():
         for batch in test_loader:
             images, labels = batch
@@ -174,11 +178,25 @@ def evaluate(weight_path):
             image_num = images.shape[0]
             total_nums += image_num
             preds = net(images)
+            labels = labels.to('cpu')
+            preds = preds.to('cpu')
             preds = F.softmax(preds, dim=-1)
             preds = torch.argmax(preds, dim=-1)
+            y.extend(labels.tolist())
+            yhat.extend(preds.tolist())
             for i in range(image_num):
                 if labels[i] == preds[i]:
                     total_right_nums += 1
+
+    data = np.zeros(len(yhat), len(y))
+    for i, a in enumerate(yhat):
+        for j, b in enumerate(y):
+            if a == b:
+                data[i, j] = 1
+    fig, ax = plt.subplots()
+    # ax.scatter(yhat, y, s=sizes, c=colors, vmin=0, vmax=100)
+    plt.imshow(data)
+    plt.show()
     return total_right_nums / total_nums
 
 

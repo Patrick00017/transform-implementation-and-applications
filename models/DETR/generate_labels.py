@@ -14,14 +14,14 @@ def generate_labels(pred_class, pred_bbox, gt_boxes):
 
     batch_size, object_queries, _ = pred_class.shape
     num_gt_box = gt_boxes.shape[0]
-    pred_class_copy = pred_class.to('cpu')
-    pred_bbox_copy = pred_bbox.to('cpu')
+    pred_class_copy = pred_class
+    pred_bbox_copy = pred_bbox
     # (B, queries, cls or x1y1x2y2)
-    gt_cls_target = torch.zeros((batch_size, object_queries, 1)).to('cpu')
-    gt_box_target = torch.zeros_like(pred_bbox).to('cpu')
+    gt_cls_target = torch.zeros((batch_size, object_queries, 1))
+    gt_box_target = torch.zeros_like(pred_bbox)
 
     # give every gt box best pair.
-    allocated_index = torch.zeros((object_queries, 1)).to('cpu')
+    allocated_index = torch.zeros((object_queries, 1))
     for i in range(num_gt_box):
         max_match_loss = 0
         best_match_index = -1
