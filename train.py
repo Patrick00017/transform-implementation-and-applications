@@ -14,8 +14,13 @@ def train(datasets, epoch_num, optimizer, net, batch_size, criterion, weight_pat
     network = net.to(device)
     loss_function = criterion.to(device)
     transform = transforms.Compose(
-        [transforms.ToTensor(),
-         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+        [
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        ]
+    )
     dataset = None
     if datasets == 'cifar-10':
         dataset = torchvision.datasets.CIFAR10('./datasets', train=True, transform=transform, download=True)

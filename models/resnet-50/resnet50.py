@@ -35,8 +35,13 @@ def finetune(batch_size=1024, epoches=50, learning_rate=0.001):
     criterion = nn.CrossEntropyLoss()
     criterion = criterion.to(device)
     transform = transforms.Compose(
-        [transforms.ToTensor(),
-         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+        [
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        ]
+    )
     dataset = torchvision.datasets.CIFAR10('../../datasets', train=True, transform=transform, download=True)
 
     train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=2)
@@ -74,7 +79,7 @@ def evaluate(weight_path):
     net = net.to(device)
     transform = transforms.Compose(
         [transforms.ToTensor(),
-         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
     net.load_state_dict(torch.load(weight_path))
     net.eval()
 
