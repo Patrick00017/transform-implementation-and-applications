@@ -51,16 +51,16 @@ def train(datasets, epoch_num, optimizer, net, batch_size, criterion, weight_pat
 if __name__ == '__main__':
     image_size = (None, None)
     # tiny weight
-    # weight_path = './weights/vit-cifar-10.pth'
+    weight_path = './weights/vit-cifar-10.pth'
     # base weight
-    weight_path = './weights/vit-base-cifar-10.pth'
+    # weight_path = './weights/vit-base-cifar-10.pth'
     datasets = 'cifar-10'
     if datasets == 'cifar-10':
         image_size = (32, 32)
-    # net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=128, depth=3, heads=64, mlp_dim=256)
-    net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=768, depth=12, heads=12, mlp_dim=1024)
+    net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=128, depth=3, heads=64, mlp_dim=256)
+    # net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=768, depth=12, heads=12, mlp_dim=3072)
     criterion = nn.CrossEntropyLoss()
     lr = 0.01
     optimizer = torch.optim.SGD(net.parameters(), lr=lr, weight_decay=1e-5)
-    train(datasets='cifar-10', epoch_num=100, optimizer=optimizer, net=net, batch_size=128, criterion=criterion,
+    train(datasets='cifar-10', epoch_num=40, optimizer=optimizer, net=net, batch_size=128, criterion=criterion,
           weight_path=weight_path)

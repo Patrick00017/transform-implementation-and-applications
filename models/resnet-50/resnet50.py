@@ -101,20 +101,20 @@ def evaluate(weight_path):
                 if labels[i] == preds[i]:
                     total_right_nums += 1
 
-    data = np.zeros((len(yhat), len(y)))
-    for i, a in enumerate(yhat):
-        for j, b in enumerate(y):
-            if a == b:
-                data[i, j] = 1.0
-    print(data)
-    fig, ax = plt.subplots()
+    # data = np.zeros((len(yhat), len(y)))
+    # for i, a in enumerate(yhat):
+    #     for j, b in enumerate(y):
+    #         if a == b:
+    #             data[i, j] = 1.0
+    # print(data)
+    # fig, ax = plt.subplots()
     # ax.scatter(yhat, y, s=sizes, c=colors, vmin=0, vmax=100)
-    plt.imshow(data, cmap='gray')
-    plt.show()
+    # plt.imshow(data, cmap='gray')
+    # plt.show()
     return total_right_nums / total_nums
 
 
 if __name__ == '__main__':
-    finetune()
+    # finetune()
     precition = evaluate(weight_path)
     print(precition)
