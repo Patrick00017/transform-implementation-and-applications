@@ -40,7 +40,7 @@ def train_voc(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-4):
         net.apply(xavior_init)
 
     # optimizer
-    optimizer = SGD(net.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    optimizer = SGD(net.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=0.9)
 
     # loss function use hungarian loss to criterion
     criterian = hungarian_loss
@@ -165,4 +165,4 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-5):
 if __name__ == '__main__':
     # net = DETR(num_classes=20)
     # print(net()['pred_class'].shape, net()['pred_bbox'].shape)
-    train_voc(epoches=100)
+    train_voc(epoches=100, learning_rate=0.001)

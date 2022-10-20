@@ -15,6 +15,8 @@ from losses.Hungarian import hungarian_loss, match_loss
 weight_path = '../../weights/detr-voc2007.pth'
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+
+
 class DETR(nn.Module):
     def __init__(self, num_classes, hidden_dims=256, nheads=8, num_encoder_layer=6, num_decoder_layer=6):
         super(DETR, self).__init__()
@@ -33,13 +35,13 @@ class DETR(nn.Module):
         # FFN to predict the bbox.
         self.linear_class = nn.Linear(hidden_dims, num_classes + 1)
         self.linear_bbox = nn.Sequential(
-            nn.Linear(hidden_dims, hidden_dims*2),
+            nn.Linear(hidden_dims, hidden_dims * 2),
             nn.ReLU(),
-            nn.Linear(hidden_dims*2, hidden_dims),
+            nn.Linear(hidden_dims * 2, hidden_dims),
             nn.ReLU(),
-            nn.Linear(hidden_dims, hidden_dims//2),
+            nn.Linear(hidden_dims, hidden_dims // 2),
             nn.ReLU(),
-            nn.Linear(hidden_dims//2, 4),
+            nn.Linear(hidden_dims // 2, 4),
             nn.ReLU()
         )
 
@@ -75,12 +77,3 @@ class DETR(nn.Module):
         pred_bbox = self.linear_bbox(h)
         # output shape: torch.Size([1, 100, 21]) torch.Size([1, 100, 4])
         return {'pred_class': pred_class, 'pred_bbox': pred_bbox}
-
-
-
-
-
-
-
-
-
