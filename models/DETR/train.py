@@ -6,6 +6,7 @@ import torchvision
 from torch import nn
 from torch.optim import SGD
 from torch.utils.data import DataLoader
+from torchvision.transforms import transforms
 
 from dataset import VOC2007
 from losses.Hungarian import hungarian_loss
@@ -28,7 +29,14 @@ def train_voc(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-4):
     # prepare the datasets
     dataset_root_path = '../../datasets/VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007'
     # dataset_root_path = 'D:\\code\\python\\datasets\\VOCdevkit\\VOC2007'
-    train_data = VOC2007(root_path=dataset_root_path)
+    # set transforms
+    transform = transforms.Compose(
+        [
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            transforms.Resize([500, 500])
+        ]
+    )
+    train_data = VOC2007(root_path=dataset_root_path, transform=transform)
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, collate_fn=lambda x: x)
 
     # network

@@ -31,8 +31,9 @@ voc_class_class2idx = dict([(name, idx) for idx, name in enumerate(voc_class_idx
 
 
 class VOC2007(Dataset):
-    def __init__(self, root_path):
+    def __init__(self, root_path, transform=None):
         super(VOC2007).__init__()
+        self.transform = transform
         self.root_path = root_path
         self.img_idx = []
         self.anno_idx = []
@@ -78,7 +79,8 @@ class VOC2007(Dataset):
             cls_and_bbox.append(box_normalize[2])
             cls_and_bbox.append(box_normalize[3])
             res.append(cls_and_bbox)
-        img = torchvision.transforms.Resize([500, 500])(img)
+        if self.transform:
+            img = self.transform(img)
         return img, res, 500, 500
 
     def __len__(self):
