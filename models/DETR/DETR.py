@@ -27,6 +27,7 @@ class DETR(nn.Module):
 
         self.backbone_channels = 2048
         self.conv1 = nn.Conv2d(self.backbone_channels, hidden_dims, 1)
+        self.bn = nn.BatchNorm2d(hidden_dims)
 
         # todo: use pytorch implementation at the present, we should write this ourselves.
         self.transformer = nn.Transformer(hidden_dims, nhead=nheads, num_encoder_layers=num_encoder_layer,
@@ -37,17 +38,13 @@ class DETR(nn.Module):
         self.linear_bbox = nn.Sequential(
             nn.Linear(hidden_dims, hidden_dims * 2),
             nn.ReLU(),
-            nn.Linear(hidden_dims * 2, hidden_dims),
-            nn.ReLU(),
-            nn.Linear(hidden_dims, hidden_dims // 2),
-            nn.ReLU(),
-            nn.Linear(hidden_dims // 2, 4),
-            nn.ReLU()
+            nn.Linear(hidden_dims * 2, 4)
         )
 
         # object queries, for now the number of object query is  ->   100
+        # self.object_queries = torch.randint(low=1, high=100, size=(self.num_queries,1))
         self.object_queries = nn.Parameter(torch.rand(self.num_queries, hidden_dims))
-        self.query_embed = nn.Embedding(self.num_queries, hidden_dims)
+        self.query_embed = nn.Embedding(self.num_queries+1, hidden_dims)
 
         # spatial positional encodings
         self.row_embed = nn.Parameter(torch.rand(50, hidden_dims // 2))
@@ -65,15 +62,17 @@ class DETR(nn.Module):
         x = self.backbone.layer4(x)
         # use conv1 to make channels 2048 to size of hidden_dims=256 (b, 256, 7, 7)
         h = self.conv1(x)
+        h = self.bn(h)
         # make positional encoding, shape: (featuremap_h * featuremap_w, 1, hidden_dims)
         H, W = h.shape[-2:]
         col = self.col_embed[:W].unsqueeze(0).repeat(H, 1, 1)
         row = self.row_embed[:H].unsqueeze(1).repeat(1, W, 1)
         positional_encoding = torch.cat((col, row), dim=-1).flatten(0, 1).unsqueeze(1)
+        tgt = self.object_queries.unsqueeze(1)
         h = self.transformer(positional_encoding + 0.1 * h.flatten(2).permute(2, 0, 1),
-                             self.object_queries.unsqueeze(1)) \
+                             tgt) \
             .transpose(0, 1)
         pred_class = self.linear_class(h)
-        pred_bbox = self.linear_bbox(h)
+        pred_bbox = self.linear_bbox(h).sigmoid()
         # output shape: torch.Size([1, 100, 21]) torch.Size([1, 100, 4])
         return {'pred_class': pred_class, 'pred_bbox': pred_bbox}

@@ -67,5 +67,5 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     lr = 0.01
     optimizer = torch.optim.SGD(net.parameters(), lr=lr, weight_decay=1e-5, momentum=0.9)
-    train(datasets='cifar-10', epoch_num=40, optimizer=optimizer, net=net, batch_size=128, criterion=criterion,
+    train(datasets='cifar-10', epoch_num=100, optimizer=optimizer, net=net, batch_size=128, criterion=criterion,
           weight_path=weight_path)
