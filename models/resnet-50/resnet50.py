@@ -31,7 +31,7 @@ class Resnet50(nn.Module):
 def finetune(batch_size=1024, epoches=50, learning_rate=0.001):
     net = Resnet50(num_classes=10)
     net = net.to(device)
-    optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate)
+    optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate, weight_decay=1e-4, momentum=0.9)
     criterion = nn.CrossEntropyLoss()
     criterion = criterion.to(device)
     transform = transforms.Compose(
@@ -85,7 +85,7 @@ def evaluate(weight_path):
 
     batch_size = 512
     datasets = torchvision.datasets.CIFAR10('../../datasets', train=False, transform=transform, download=True)
-    test_loader = DataLoader(datasets, batch_size=batch_size, shuffle=True, num_workers=2)
+    test_loader = DataLoader(datasets, batch_size=batch_size, shuffle=False, num_workers=2)
     total_right_nums = 0
     total_nums = 0
     y = []
@@ -120,6 +120,6 @@ def evaluate(weight_path):
 
 
 if __name__ == '__main__':
-    # finetune()
+    finetune()
     precition = evaluate(weight_path)
     print(precition)

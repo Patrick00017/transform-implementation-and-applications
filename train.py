@@ -66,6 +66,6 @@ if __name__ == '__main__':
     # net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=768, depth=12, heads=12, mlp_dim=3072)
     criterion = nn.CrossEntropyLoss()
     lr = 0.01
-    optimizer = torch.optim.SGD(net.parameters(), lr=lr, weight_decay=1e-5)
+    optimizer = torch.optim.SGD(net.parameters(), lr=lr, weight_decay=1e-5, momentum=0.9)
     train(datasets='cifar-10', epoch_num=40, optimizer=optimizer, net=net, batch_size=128, criterion=criterion,
           weight_path=weight_path)

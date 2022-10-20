@@ -165,7 +165,7 @@ def evaluate(weight_path):
 
     batch_size = 128
     datasets = torchvision.datasets.CIFAR10('../datasets', train=False, transform=transform, download=True)
-    test_loader = DataLoader(datasets, batch_size=batch_size, shuffle=True, num_workers=2)
+    test_loader = DataLoader(datasets, batch_size=batch_size, shuffle=False, num_workers=2)
     total_right_nums = 0
     total_nums = 0
     y = []
