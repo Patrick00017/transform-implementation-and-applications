@@ -32,8 +32,8 @@ def match_loss(pred_cls, pred_bbox, gt_cls, gt_box):
     aim_class_probability = probability[aim_class]
     class_loss = 1 - aim_class_probability
 
-    box_loss = bounding_box_loss(pred_bbox, gt_box, 1, 1)
-    return -class_loss + box_loss
+    box_loss = bounding_box_loss(pred_bbox, gt_box, 1.5, 1)
+    return class_loss + box_loss
 
 
 def hungarian_loss(pred_cls, pred_bbox, gt_cls, gt_box, mask, lou_superparams=1.5, l1_superparams=1):
