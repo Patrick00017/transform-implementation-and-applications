@@ -1,5 +1,6 @@
 import torch
 from losses.Hungarian import match_loss
+from tools.bbox import xyxy_2_xywh, xywh_2_xyxy
 
 
 def generate_labels(pred_class, pred_bbox, gt_boxes):
@@ -31,7 +32,8 @@ def generate_labels(pred_class, pred_bbox, gt_boxes):
                 continue
             pred_c = pred_class[0, j]
             pred_b = pred_bbox[0, j]
-            match_l = match_loss(pred_cls=pred_c, pred_bbox=pred_b, gt_cls=gt[0], gt_box=gt[1:5])
+            pred_b_xyxy = xywh_2_xyxy(pred_b)
+            match_l = match_loss(pred_cls=pred_c, pred_bbox=pred_b_xyxy, gt_cls=gt[0], gt_box=gt[1:5])
             if match_l > max_match_loss:
                 max_match_loss = match_l
                 best_match_index = j

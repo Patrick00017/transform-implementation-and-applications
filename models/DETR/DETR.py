@@ -32,10 +32,20 @@ class DETR(nn.Module):
 
         # FFN to predict the bbox.
         self.linear_class = nn.Linear(hidden_dims, num_classes + 1)
-        self.linear_bbox = nn.Linear(hidden_dims, 4)
+        self.linear_bbox = nn.Sequential(
+            nn.Linear(hidden_dims, hidden_dims*2),
+            nn.ReLU(),
+            nn.Linear(hidden_dims*2, hidden_dims),
+            nn.ReLU(),
+            nn.Linear(hidden_dims, hidden_dims//2),
+            nn.ReLU(),
+            nn.Linear(hidden_dims//2, 4),
+            nn.ReLU()
+        )
 
         # object queries, for now the number of object query is  ->   100
         self.object_queries = nn.Parameter(torch.rand(self.num_queries, hidden_dims))
+        self.query_embed = nn.Embedding(self.num_queries, hidden_dims)
 
         # spatial positional encodings
         self.row_embed = nn.Parameter(torch.rand(50, hidden_dims // 2))
@@ -62,7 +72,7 @@ class DETR(nn.Module):
                              self.object_queries.unsqueeze(1)) \
             .transpose(0, 1)
         pred_class = self.linear_class(h)
-        pred_bbox = torch.sigmoid(self.linear_bbox(h))
+        pred_bbox = self.linear_bbox(h)
         # output shape: torch.Size([1, 100, 21]) torch.Size([1, 100, 4])
         return {'pred_class': pred_class, 'pred_bbox': pred_bbox}
 
