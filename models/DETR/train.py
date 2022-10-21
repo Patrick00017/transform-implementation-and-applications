@@ -58,13 +58,17 @@ def train_voc(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-4):
         image_num = 0
         total_loss = 0
         for i, batch in enumerate(train_loader):
-            batch_start_time = time.time()
             image_num += 1
             image = batch[0][0]
-            height, width = batch[0][2], batch[0][3]
+            width, height = batch[0][2], batch[0][3]
             image = image.unsqueeze(0)
             image = image.to(device)
-            gt_boxes = torch.tensor(batch[0][1]).to('cpu')
+            targets = batch[0, 1]
+            gt_clses = targets["labels"].to('cpu')
+            gt_bboxes = targets["boxes"].to('cpu')
+            print(gt_clses)
+            print(gt_bboxes)
+            # gt_boxes = torch.tensor(batch[0][1]).to('cpu')
 
             optimizer.zero_grad()
             output = net(image)

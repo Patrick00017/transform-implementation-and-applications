@@ -31,8 +31,10 @@ voc_class_class2idx = dict([(name, idx) for idx, name in enumerate(voc_class_idx
 
 
 class VOC2007(Dataset):
-    def __init__(self, root_path, transform=None):
+    def __init__(self, root_path, transform=None, resize_w=500, resize_h=500):
         super(VOC2007).__init__()
+        self.resize_w = resize_w
+        self.resize_h = resize_h
         self.transform = transform
         self.root_path = root_path
         self.img_idx = []
@@ -53,9 +55,10 @@ class VOC2007(Dataset):
         img = torchvision.io.read_image(self.img_idx[item]) / 255.0
         # [‘C’, ‘H’, ‘W’]
         channels, height, width = img.shape
-        targets = ET.parse(self.anno_idx[item])
-        res = []  # 存储标注信息 即边框左上角和右下角的四个点的坐标信息和目标的类别标签
-        for obj in targets.iter('object'):
+        objects = ET.parse(self.anno_idx[item])
+        boxes = []
+        clses = []
+        for obj in objects.iter('object'):
             cls_and_bbox = []  # [cls_idx, x1, y1, x2, y2]
             name = obj.find('name').text.lower().strip()
             class_idx = voc_class_class2idx[name]
@@ -78,10 +81,14 @@ class VOC2007(Dataset):
             cls_and_bbox.append(box_normalize[1])
             cls_and_bbox.append(box_normalize[2])
             cls_and_bbox.append(box_normalize[3])
-            res.append(cls_and_bbox)
-        if self.transform:
-            img = self.transform(img)
-        return img, res, 500, 500
+            clses.append(cls_and_bbox[0])
+            boxes.extend(cls_and_bbox[1:5])
+        boxes = torch.tensor(boxes, dtype=torch.float32)
+        clses = torch.tensor(clses, dtype=torch.int64)
+        target = {"boxes": boxes, "labels": clses}
+        if self.transform is not None:
+            img, target = self.transform(img, target)
+        return img, target, self.resize_w, self.resize_h
 
     def __len__(self):
         data_length = len(self.img_idx)
