@@ -12,6 +12,7 @@ from dataset import VOC2007
 from losses.Hungarian import hungarian_loss
 from DETR import DETR
 from generate_labels import generate_labels
+from transforms import Compose, RandomHorizontalFlip, Resize, Normalize
 
 weight_path = '../../weights/detr-voc2007-small.pth'
 
@@ -22,18 +23,21 @@ def xavior_init(layer):
         layer.bias.data.fill_(0.01)
 
 
-def train_voc(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-4):
+def train_voc(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-4, located="425"):
     # init device
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
     # prepare the datasets
     dataset_root_path = '../../datasets/VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007'
-    # dataset_root_path = 'D:\\code\\python\\datasets\\VOCdevkit\\VOC2007'
+    if located == '1414':
+        dataset_root_path = 'D:\\code\\python\\datasets\\VOCdevkit\\VOC2007'
+
     # set transforms
-    transform = transforms.Compose(
+    transform = Compose(
         [
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-            transforms.Resize([500, 500])
+            RandomHorizontalFlip(0.5),
+            Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010]),
+            Resize([500, 500])
         ]
     )
     train_data = VOC2007(root_path=dataset_root_path, transform=transform)
@@ -63,12 +67,10 @@ def train_voc(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-4):
             width, height = batch[0][2], batch[0][3]
             image = image.unsqueeze(0)
             image = image.to(device)
-            targets = batch[0, 1]
-            gt_clses = targets["labels"].to('cpu')
-            gt_bboxes = targets["boxes"].to('cpu')
-            print(gt_clses)
-            print(gt_bboxes)
-            # gt_boxes = torch.tensor(batch[0][1]).to('cpu')
+            targets = batch[0][1]
+            gt_clses = targets["labels"].unsqueeze(1).to('cpu')
+            gt_bboxes = targets["boxes"].reshape(-1, 4).to('cpu')
+            gt_boxes = torch.cat((gt_clses, gt_bboxes), dim=1).to('cpu')
 
             optimizer.zero_grad()
             output = net(image)
@@ -177,4 +179,4 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-5):
 if __name__ == '__main__':
     # net = DETR(num_classes=20)
     # print(net()['pred_class'].shape, net()['pred_bbox'].shape)
-    train_voc(epoches=100, learning_rate=0.001)
+    train_voc(epoches=100, learning_rate=0.001, located='1414')
