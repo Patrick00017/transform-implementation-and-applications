@@ -175,6 +175,7 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5):
             l.backward()
             optimizer.step()
             total_loss += abs(l.item())
+            print(f'batch:{image_num} over. loss: {l.item()}')
             if image_num >= 20000:
                 break
             # print(f'batch loss: {l.item()}')
