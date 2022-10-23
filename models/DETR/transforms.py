@@ -1,5 +1,7 @@
 import random
 
+import numpy as np
+import torch
 from torchvision.transforms import functional as F
 
 
@@ -63,4 +65,13 @@ class Resize(object):
 class ToTensor(object):
     def __call__(self, image, target):
         image = F.to_tensor(image)
-        return image, target
+        img_height, img_width = image.shape[-2:]
+        targets = []
+        for element in target:
+            temp = []
+            temp.append(element['category_id'])
+            x1, y1, w, h = element['bbox']  # x1 y1 w h
+            bbox = [x1 / img_width, y1 / img_height, (x1 + w) / img_width, (y1 + h) / img_height]
+            temp.extend(bbox)
+            targets.append(temp)
+        return image, torch.tensor(targets)
