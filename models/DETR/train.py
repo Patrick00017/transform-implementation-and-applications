@@ -124,11 +124,15 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5):
                                          'instances_train2017.json')
     coco_dataset = torchvision.datasets.CocoDetection(root=train_path, annFile=train_annotation_path,
                                                       transforms=transform)
+    coco_train_loader = DataLoader(coco_dataset, batch_size=1, shuffle=True)
     print(f'Number of samples: {len(coco_dataset)}.')
-    # for batch in coco_dataset:
+    # for batch in coco_train_loader:
     #     img, target = batch
-    #     img = img.unsqueeze(0).to(device)
-    #     print(target)
+    #     # img = img.unsqueeze(0).to(device)
+    #     print(img.shape)
+    #     print(target.shape)
+    #     break
+    # return
     # network
     net = DETR(num_classes=90)
     net = net.to(device)
@@ -145,13 +149,12 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5):
         start_time = time.time()
         image_num = 0
         total_loss = 0
-        for i, batch in enumerate(coco_dataset):
+        for i, batch in enumerate(coco_train_loader):
             image_num += 1
             image, gt_boxes = batch
             width, height = 500, 500
-            image = image.unsqueeze(0)
             image = image.to(device)
-            gt_boxes = gt_boxes.to(device)
+            gt_boxes = gt_boxes[0].to(device)
 
             optimizer.zero_grad()
             output = net(image)
@@ -172,6 +175,8 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5):
             l.backward()
             optimizer.step()
             total_loss += abs(l.item())
+            if image_num >= 20000:
+                break
             # print(f'batch loss: {l.item()}')
             # batch_end_time = time.time()
             # print(f'batch loss: {l.item()}, batch time: {batch_end_time-batch_start_time}s')
