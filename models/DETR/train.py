@@ -6,6 +6,7 @@ import torchvision
 from torch import nn
 from torch.optim import SGD
 from torch.utils.data import DataLoader
+from torchvision.datasets import CocoDetection
 from torchvision.transforms import transforms
 
 from dataset import VOC2007
@@ -129,13 +130,18 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5, 
                                              'instances_train2017.json')
     coco_dataset = torchvision.datasets.CocoDetection(root=train_path, annFile=train_annotation_path,
                                                       transforms=transform)
-    coco_train_loader = DataLoader(coco_dataset, batch_size=1, shuffle=True)
+
+    def collate_fn(batch):
+        return tuple(zip(*batch))
+
+    coco_train_loader = DataLoader(coco_dataset, batch_size=3, shuffle=True, collate_fn=collate_fn)
     print(f'Number of samples: {len(coco_dataset)}.')
-    # for batch in coco_train_loader:
-    #     img, target = batch
+    # for imgs, annotations in coco_train_loader:
     #     # img = img.unsqueeze(0).to(device)
-    #     print(img.shape)
-    #     print(target.shape)
+    #     imgs = torch.cat([img.unsqueeze(0).to(device) for img in imgs], dim=0).to(device)
+    #     annotations = [t.to('cpu') for t in annotations]
+    #     print(imgs.shape)
+    #     print(annotations)
     #     break
     # return
     # network
@@ -156,13 +162,14 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5, 
         total_loss = 0
         for i, batch in enumerate(coco_train_loader):
             image_num += 1
-            image, gt_boxes = batch
+            imgs, annotations = batch
+            imgs = torch.cat([img.unsqueeze(0).to(device) for img in imgs], dim=0).to(device)
+            # annotations is a list of tensor(num_gt_box, clsx1y1x2y2)
+            annotations = [t.to('cpu') for t in annotations]
             width, height = 500, 500
-            image = image.to(device)
-            gt_boxes = gt_boxes[0].to('cpu')
 
             optimizer.zero_grad()
-            output = net(image)
+            output = net(imgs)
             pred_class, pred_bbox = output['pred_class'], output['pred_bbox']
             pred_class = pred_class.to('cpu')
             pred_bbox = pred_bbox.to('cpu')
@@ -173,9 +180,9 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5, 
 
             # gt_class and gt_bbox shape is like pred_class and pred_bbox, and mask=1 is where gtbox locate
             # generate_start_time = time.time()
-            gt_class, gt_bbox, mask = generate_labels(pred_class, pred_bbox, gt_boxes)
+            gt_class, gt_bbox, masks = generate_labels(pred_class, pred_bbox, annotations)
             # generate_end_time = time.time()
-            l = criterian(pred_cls=pred_class, pred_bbox=pred_bbox, gt_cls=gt_class, gt_box=gt_bbox, mask=mask,
+            l = criterian(pred_cls=pred_class, pred_bbox=pred_bbox, gt_clses=gt_class, gt_boxes=gt_bbox, masks=masks,
                           lou_superparams=1.5, l1_superparams=1)
             l.backward()
             optimizer.step()

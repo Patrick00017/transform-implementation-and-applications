@@ -7,11 +7,13 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 from models.vit import ViT
 from torchvision.transforms import transforms
+from models.net_params_count import count_parameters
 
 
 def train(datasets, epoch_num, optimizer, net, batch_size, criterion, weight_path):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     network = net.to(device)
+    print(f'network params: {count_parameters(network)}')
     loss_function = criterion.to(device)
     transform = transforms.Compose(
         [
@@ -56,16 +58,18 @@ def train(datasets, epoch_num, optimizer, net, batch_size, criterion, weight_pat
 if __name__ == '__main__':
     image_size = (None, None)
     # tiny weight
-    weight_path = './weights/vit-cifar-10.pth'
+    # weight_path = './weights/vit-cifar-10.pth'
     # base weight
-    # weight_path = './weights/vit-base-cifar-10.pth'
+    weight_path = './weights/vit-base-cifar-10.pth'
     datasets = 'cifar-10'
     if datasets == 'cifar-10':
         image_size = (32, 32)
-    net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=128, depth=3, heads=64, mlp_dim=256)
-    # net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=768, depth=12, heads=12, mlp_dim=3072)
+    # tiny vit
+    # net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=128, depth=3, heads=64, mlp_dim=256)
+    # base vit
+    net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=128, depth=5, heads=64, mlp_dim=256)
     criterion = nn.CrossEntropyLoss()
     lr = 0.01
     optimizer = torch.optim.SGD(net.parameters(), lr=lr, weight_decay=1e-5, momentum=0.9)
-    train(datasets='cifar-10', epoch_num=100, optimizer=optimizer, net=net, batch_size=128, criterion=criterion,
+    train(datasets='cifar-10', epoch_num=200, optimizer=optimizer, net=net, batch_size=128, criterion=criterion,
           weight_path=weight_path)

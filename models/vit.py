@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
-from net_params_count import count_parameters
+from models.net_params_count import count_parameters
 
 
 def pair(t):

@@ -36,34 +36,36 @@ def match_loss(pred_cls, pred_bbox, gt_cls, gt_box):
     return class_loss + box_loss
 
 
-def hungarian_loss(pred_cls, pred_bbox, gt_cls, gt_box, mask, lou_superparams=1.5, l1_superparams=1):
+def hungarian_loss(pred_cls, pred_bbox, gt_clses, gt_boxes, masks, lou_superparams=1.5, l1_superparams=1):
     """
     compute the hungarian loss, straight calculate the cls loss, and use maks to select to calculate the bbox loss.
     :param pred_cls: (B, q, 21)
     :param pred_bbox: (B, q, 4)
-    :param gt_cls: (B, q, 1)
-    :param gt_box: (B, q, 4)
-    :param mask: (q)
+    :param gt_clses: (B, q, 1)
+    :param gt_boxes: (B, q, 4)
+    :param masks: (B, q)
     :param lou_superparams: float
     :param l1_superparams: float
     q = object queries
     :return: loss
     """
 
+    batch_size = pred_cls.shape[0]
     cls_criterion = torch.nn.CrossEntropyLoss()
-    gt_cls = gt_cls.long().squeeze(-1)[0]
-    pred_cls = pred_cls[0]
-    # print(f'pred_cls: {pred_cls.shape}, gt_cls: {gt_cls.shape}')
-    cls_loss = cls_criterion(pred_cls, gt_cls)
+    cls_loss = cls_criterion(pred_cls, gt_clses.squeeze(-1).long())
 
-    total_bbox_loss = torch.tensor(0).float()
-    for i in range(mask.shape[0]):
-        if mask[i, 0] == 1:
-            pred_b = pred_bbox[0, i, :]
-            pred_b_xyxy = xywh_2_xyxy(pred_b)
-            gt_b = gt_box[0, i, :]
-            bbox_loss = bounding_box_loss(pred_bbox=pred_b_xyxy, gtbox=gt_b, lou_superparams=lou_superparams,
-                                          l1_superparams=l1_superparams)
-            bbox_loss = bbox_loss
-            total_bbox_loss += bbox_loss
-    return cls_loss + total_bbox_loss
+    bbox_loss = torch.tensor(0).float()
+    for b in range(batch_size):
+        batch_bbox_loss = torch.tensor(0).float()
+        mask = masks[b]
+        for i in range(mask.shape[0]):
+            if mask[i, 0] == 1:
+                pred_b = pred_bbox[b, i, :]
+                pred_b_xyxy = xywh_2_xyxy(pred_b)
+                gt_b = gt_boxes[b, i, :]
+                bbox_loss = bounding_box_loss(pred_bbox=pred_b_xyxy, gtbox=gt_b, lou_superparams=lou_superparams,
+                                              l1_superparams=l1_superparams)
+                batch_bbox_loss += bbox_loss
+        bbox_loss += batch_bbox_loss
+
+    return cls_loss + bbox_loss / batch_size
