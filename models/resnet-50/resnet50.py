@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 from torchvision.models import ResNet50_Weights
 from torchvision.transforms import transforms
 import torch.nn.functional as F
+from models.net_params_count import count_parameters
 
 weight_path = '../../weights/resnet50-cifar10.pth'
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -81,6 +82,7 @@ def evaluate(weight_path):
         [transforms.ToTensor(),
          transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
     net.load_state_dict(torch.load(weight_path))
+    net_params_num = count_parameters(net)
     net.eval()
 
     batch_size = 512
@@ -91,6 +93,7 @@ def evaluate(weight_path):
     y = []
     yhat = []
     with torch.no_grad():
+        start_time = time.time()
         for batch in test_loader:
             images, labels = batch
             images = images.to(device)
@@ -105,6 +108,8 @@ def evaluate(weight_path):
             for i in range(image_num):
                 if labels[i] == preds[i]:
                     total_right_nums += 1
+        end_time = time.time()
+    time_cost = end_time - start_time
 
     # data = np.zeros((len(yhat), len(y)))
     # for i, a in enumerate(yhat):
@@ -116,10 +121,10 @@ def evaluate(weight_path):
     # ax.scatter(yhat, y, s=sizes, c=colors, vmin=0, vmax=100)
     # plt.imshow(data, cmap='gray')
     # plt.show()
-    return total_right_nums / total_nums
+    return total_right_nums / total_nums, net_params_num, time_cost
 
 
 if __name__ == '__main__':
-    finetune()
-    precition = evaluate(weight_path)
-    print(precition)
+    # finetune()
+    precition, params, time_cost = evaluate(weight_path)
+    print(precition, params, time_cost)

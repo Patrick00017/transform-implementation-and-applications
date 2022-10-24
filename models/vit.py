@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -8,6 +10,7 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
+from net_params_count import count_parameters
 
 
 def pair(t):
@@ -157,6 +160,7 @@ def evaluate(weight_path):
     image_size = (32, 32)
     net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=128, depth=3, heads=64, mlp_dim=256)
     net = net.to(device)
+    net_params_num = count_parameters(net)
     transform = transforms.Compose(
         [transforms.ToTensor(),
          transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
@@ -171,6 +175,7 @@ def evaluate(weight_path):
     y = []
     yhat = []
     with torch.no_grad():
+        start_time = time.time()
         for batch in test_loader:
             images, labels = batch
             images = images.to(device)
@@ -185,7 +190,8 @@ def evaluate(weight_path):
             for i in range(image_num):
                 if labels[i] == preds[i]:
                     total_right_nums += 1
-
+        end_time = time.time()
+    time_cost = end_time - start_time
     # data = np.zeros((len(yhat), len(y)))
     # for i, a in enumerate(yhat):
     #     for j, b in enumerate(y):
@@ -194,10 +200,10 @@ def evaluate(weight_path):
     # fig, ax = plt.subplots()
     # plt.imshow(data, cmap='gray')
     # plt.show()
-    return total_right_nums / total_nums
+    return total_right_nums / total_nums, net_params_num, time_cost
 
 
 if __name__ == '__main__':
     weight_path = '../weights/vit-cifar-10.pth'
-    mean_accurate = evaluate(weight_path=weight_path)
-    print(mean_accurate)
+    mean_accurate, net_params_num, time_cost = evaluate(weight_path=weight_path)
+    print(mean_accurate, net_params_num, time_cost)

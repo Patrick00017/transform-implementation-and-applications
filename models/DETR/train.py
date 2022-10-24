@@ -103,7 +103,7 @@ def train_voc(batch_size=1, epoches=3, learning_rate=0.01, weight_decay=1e-4, lo
     print('save weights successfully.')
 
 
-def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5):
+def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5, located='425'):
     weight_path = '../../weights/detr-coco2017.pth'
     # init device
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -122,6 +122,11 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5):
     train_path = os.path.join(dataset_root_path, 'train2017', 'train2017')
     train_annotation_path = os.path.join(dataset_root_path, 'annotations_trainval2017', 'annotations',
                                          'instances_train2017.json')
+    if located == '425':
+        dataset_root_path = '../../../../425data/newdisk/zhouh/dataset/COCO2017'
+        train_path = os.path.join(dataset_root_path, 'train2017')
+        train_annotation_path = os.path.join(dataset_root_path, 'annotations',
+                                             'instances_train2017.json')
     coco_dataset = torchvision.datasets.CocoDetection(root=train_path, annFile=train_annotation_path,
                                                       transforms=transform)
     coco_train_loader = DataLoader(coco_dataset, batch_size=1, shuffle=True)
@@ -154,7 +159,7 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5):
             image, gt_boxes = batch
             width, height = 500, 500
             image = image.to(device)
-            gt_boxes = gt_boxes[0].to(device)
+            gt_boxes = gt_boxes[0].to('cpu')
 
             optimizer.zero_grad()
             output = net(image)
@@ -175,8 +180,6 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5):
             l.backward()
             optimizer.step()
             total_loss += abs(l.item())
-            if image_num >= 100:
-                break
             # print(f'batch loss: {l.item()}')
             # batch_end_time = time.time()
             # print(f'batch loss: {l.item()}, batch time: {batch_end_time-batch_start_time}s')
@@ -193,4 +196,4 @@ if __name__ == '__main__':
     # net = DETR(num_classes=20)
     # print(net()['pred_class'].shape, net()['pred_bbox'].shape)
     # train_voc(epoches=50, learning_rate=0.001, located='1414')
-    train_coco(epoches=10)
+    train_coco(epoches=100, located='425')
