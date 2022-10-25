@@ -181,7 +181,7 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5, 
 
             # gt_class and gt_bbox shape is like pred_class and pred_bbox, and mask=1 is where gtbox locate
             # generate_start_time = time.time()
-            gt_class, gt_bbox, masks = generate_labels(pred_class, pred_bbox, annotations, process_num=4)
+            gt_class, gt_bbox, masks = generate_labels(pred_class, pred_bbox, annotations, process_num=2)
             # generate_end_time = time.time()
             l = criterian(pred_cls=pred_class, pred_bbox=pred_bbox, gt_clses=gt_class, gt_boxes=gt_bbox, masks=masks,
                           lou_superparams=1.5, l1_superparams=1)
