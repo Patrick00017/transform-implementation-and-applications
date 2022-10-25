@@ -134,7 +134,7 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5, 
     def collate_fn(batch):
         return tuple(zip(*batch))
 
-    coco_train_loader = DataLoader(coco_dataset, batch_size=3, shuffle=True, collate_fn=collate_fn)
+    coco_train_loader = DataLoader(coco_dataset, batch_size=16, shuffle=True, collate_fn=collate_fn)
     print(f'Number of samples: {len(coco_dataset)}.')
     # for imgs, annotations in coco_train_loader:
     #     # img = img.unsqueeze(0).to(device)
@@ -161,6 +161,7 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5, 
         image_num = 0
         total_loss = 0
         for i, batch in enumerate(coco_train_loader):
+            batch_start_time = time.time()
             image_num += 1
             imgs, annotations = batch
             imgs = torch.cat([img.unsqueeze(0).to(device) for img in imgs], dim=0).to(device)
@@ -187,7 +188,8 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5, 
             l.backward()
             optimizer.step()
             total_loss += abs(l.item())
-            # print(f'batch loss: {l.item()}')
+            batch_end_time = time.time()
+            print(f'batch loss: {l.item()}, time: {batch_end_time-batch_start_time} seconds.')
             # batch_end_time = time.time()
             # print(f'batch loss: {l.item()}, batch time: {batch_end_time-batch_start_time}s')
             # print(f'generate label time: {generate_end_time-generate_start_time}s')
@@ -203,4 +205,4 @@ if __name__ == '__main__':
     # net = DETR(num_classes=20)
     # print(net()['pred_class'].shape, net()['pred_bbox'].shape)
     # train_voc(epoches=50, learning_rate=0.001, located='1414')
-    train_coco(epoches=100, located='425')
+    train_coco(epoches=100, located='1414')

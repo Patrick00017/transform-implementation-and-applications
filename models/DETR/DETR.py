@@ -52,6 +52,7 @@ class DETR(nn.Module):
 
     def forward(self, x=torch.rand(1, 3, 224, 224)):
         # use resnet50 to extract features. (b, c, h, w): (b, 2048, 7, 7)
+        B = x.shape[0]
         x = self.backbone.conv1(x)
         x = self.backbone.bn1(x)
         x = self.backbone.relu(x)
@@ -68,10 +69,9 @@ class DETR(nn.Module):
         col = self.col_embed[:W].unsqueeze(0).repeat(H, 1, 1)
         row = self.row_embed[:H].unsqueeze(1).repeat(1, W, 1)
         positional_encoding = torch.cat((col, row), dim=-1).flatten(0, 1).unsqueeze(1)
-        tgt = self.object_queries.unsqueeze(1)
-        h = self.transformer(positional_encoding + 0.1 * h.flatten(2).permute(2, 0, 1),
-                             tgt) \
-            .transpose(0, 1)
+        tgt = self.object_queries.unsqueeze(1).repeat(1, B, 1)
+        src = positional_encoding + 0.1 * h.flatten(2).permute(2, 0, 1)
+        h = self.transformer(src, tgt).transpose(0, 1)
         pred_class = self.linear_class(h)
         pred_bbox = self.linear_bbox(h).sigmoid()
         # output shape: torch.Size([1, 100, 21]) torch.Size([1, 100, 4])

@@ -3,6 +3,7 @@ import torch.nn.functional as F
 from losses.GLoU import GLoU
 from tools.bbox import xywh_2_xyxy, xyxy_2_xywh
 
+
 def bounding_box_loss(pred_bbox, gtbox, lou_superparams, l1_superparams):
     """
     box loss function for DETR
@@ -52,7 +53,7 @@ def hungarian_loss(pred_cls, pred_bbox, gt_clses, gt_boxes, masks, lou_superpara
 
     batch_size = pred_cls.shape[0]
     cls_criterion = torch.nn.CrossEntropyLoss()
-    cls_loss = cls_criterion(pred_cls, gt_clses.squeeze(-1).long())
+    cls_loss = cls_criterion(pred_cls.permute(0, 2, 1), gt_clses.squeeze(-1).long())
 
     bbox_loss = torch.tensor(0).float()
     for b in range(batch_size):

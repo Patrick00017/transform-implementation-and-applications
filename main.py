@@ -1,10 +1,16 @@
-import time
+from multiprocessing import Process, Lock
+
+def f(l, i):
+    l.acquire()
+    try:
+        print('hello world', i)
+    finally:
+        l.release()
 
 if __name__ == '__main__':
-    start = time.time()
-    for i in range(100000):
-        print('PyCharm')
-    end = time.time()
-    print(end - start)
+    lock = Lock()
+
+    for num in range(10):
+        Process(target=f, args=(lock, num)).start()
 
 
