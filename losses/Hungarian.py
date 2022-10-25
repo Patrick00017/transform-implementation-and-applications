@@ -58,9 +58,8 @@ def hungarian_loss(pred_cls, pred_bbox, gt_clses, gt_boxes, masks, lou_superpara
     bbox_loss = torch.tensor(0).float()
     for b in range(batch_size):
         batch_bbox_loss = torch.tensor(0).float()
-        mask = masks[b]
-        for i in range(mask.shape[0]):
-            if mask[i, 0] == 1:
+        for i in range(masks.shape[1]):
+            if masks[b, i] == 1:
                 pred_b = pred_bbox[b, i, :]
                 pred_b_xyxy = xywh_2_xyxy(pred_b)
                 gt_b = gt_boxes[b, i, :]
