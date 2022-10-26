@@ -134,7 +134,7 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5, 
     def collate_fn(batch):
         return tuple(zip(*batch))
 
-    coco_train_loader = DataLoader(coco_dataset, batch_size=16, shuffle=True, collate_fn=collate_fn)
+    coco_train_loader = DataLoader(coco_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
     print(f'Number of samples: {len(coco_dataset)}.')
     # for imgs, annotations in coco_train_loader:
     #     # img = img.unsqueeze(0).to(device)
@@ -205,4 +205,4 @@ if __name__ == '__main__':
     # net = DETR(num_classes=20)
     # print(net()['pred_class'].shape, net()['pred_bbox'].shape)
     # train_voc(epoches=50, learning_rate=0.001, located='1414')
-    train_coco(epoches=100, located='1414')
+    train_coco(epoches=100, located='425')

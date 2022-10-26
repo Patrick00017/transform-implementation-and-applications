@@ -155,11 +155,11 @@ class ViT(nn.Module):
         return self.mlp_head(x)
 
 
-def evaluate(weight_path):
+def evaluate(weight_path, model):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     image_size = (32, 32)
-    net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=128, depth=3, heads=64, mlp_dim=256)
-    net = net.to(device)
+    # net = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=128, depth=3, heads=64, mlp_dim=256)
+    net = model.to(device)
     net_params_num = count_parameters(net)
     transform = transforms.Compose(
         [transforms.ToTensor(),
@@ -204,6 +204,8 @@ def evaluate(weight_path):
 
 
 if __name__ == '__main__':
-    weight_path = '../weights/vit-cifar-10.pth'
-    mean_accurate, net_params_num, time_cost = evaluate(weight_path=weight_path)
+    image_size = (32, 32)
+    weight_path = '../weights/vit-base-cifar-10.pth'
+    model = ViT(image_size=image_size[0], patch_size=4, num_classes=10, dim=128, depth=5, heads=64, mlp_dim=256)
+    mean_accurate, net_params_num, time_cost = evaluate(weight_path=weight_path, model=model)
     print(mean_accurate, net_params_num, time_cost)
