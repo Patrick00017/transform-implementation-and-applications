@@ -134,7 +134,7 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5, 
     def collate_fn(batch):
         return tuple(zip(*batch))
 
-    coco_train_loader = DataLoader(coco_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
+    coco_train_loader = DataLoader(coco_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
     print(f'Number of samples: {len(coco_dataset)}.')
     # for imgs, annotations in coco_train_loader:
     #     # img = img.unsqueeze(0).to(device)
@@ -181,7 +181,7 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5, 
 
             # gt_class and gt_bbox shape is like pred_class and pred_bbox, and mask=1 is where gtbox locate
             # generate_start_time = time.time()
-            gt_class, gt_bbox, masks = generate_labels(pred_class, pred_bbox, annotations, process_num=2)
+            gt_class, gt_bbox, masks = generate_labels(pred_class, pred_bbox, annotations, process_num=3)
             # generate_end_time = time.time()
             l = criterian(pred_cls=pred_class, pred_bbox=pred_bbox, gt_clses=gt_class, gt_boxes=gt_bbox, masks=masks,
                           lou_superparams=1.5, l1_superparams=1)
@@ -189,7 +189,9 @@ def train_coco(batch_size=1, epoches=3, learning_rate=0.001, weight_decay=1e-5, 
             optimizer.step()
             total_loss += abs(l.item())
             batch_end_time = time.time()
-            print(f'batch loss: {l.item()}, time: {batch_end_time-batch_start_time} seconds.')
+            if i % 500 == 0:
+                print(f'batch loss: {l.item()}, time: {batch_end_time-batch_start_time} seconds.')
+                torch.save(net.state_dict(), weight_path)
             # batch_end_time = time.time()
             # print(f'batch loss: {l.item()}, batch time: {batch_end_time-batch_start_time}s')
             # print(f'generate label time: {generate_end_time-generate_start_time}s')
@@ -205,4 +207,4 @@ if __name__ == '__main__':
     # net = DETR(num_classes=20)
     # print(net()['pred_class'].shape, net()['pred_bbox'].shape)
     # train_voc(epoches=50, learning_rate=0.001, located='1414')
-    train_coco(epoches=100, located='425')
+    train_coco(batch_size=8, epoches=100, located='425')
