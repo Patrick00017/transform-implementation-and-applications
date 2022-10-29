@@ -13,9 +13,9 @@ CIFAR-10 batchsize=128
 ### 网络
 vit/tiny:  patchsize:4 dim=128 depth=3, heads=64, mlp_dim=256 params=12798858
 
-vit/base:  patchsize:4 dim=128 depth=3, heads=64, mlp_dim=256 params=12798858
+vit/base:  patchsize:4 dim=128 depth=3, heads=64, mlp_dim=256 params=21320586
 
-resnet50:  params=23528522
+resnet50:                                                     params=23528522
 
 
 
