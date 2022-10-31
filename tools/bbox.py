@@ -52,7 +52,7 @@ def get_objectness_label(img, gt_boxes, gt_labels, iou_threshold=0.7, anchors=No
     """
         img 是输入的图像数据，形状是[N, C, H, W]
         gt_boxes，真实框，维度是[N, 50, 4]，其中50是真实框数目的上限，当图片中真实框不足50个时，不足部分的坐标全为0
-                  真实框坐标格式是xywh，这里使用相对值
+        真实框坐标格式是xywh，这里使用相对值
         gt_labels，真实框所属类别，维度是[N, 50]
         iou_threshold，当预测框与真实框的iou大于iou_threshold时不将其看作是负样本
         anchors，锚框可选的尺寸
