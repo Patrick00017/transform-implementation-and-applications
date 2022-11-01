@@ -44,7 +44,7 @@ class YoloDetectionBlock(nn.Module):
             padding=0)
         self.tip = conv_batch(
             in_num=ch_out,
-            out_num=ch_out * 2,
+            out_num=ch_out,
             kernel_size=3,
             stride=1,
             padding=1)
@@ -94,7 +94,7 @@ class Yolov3(nn.Module):
 
 
 if __name__ == '__main__':
-    net = Yolov3(5, 3)
+    net = Yolov3(7, 3)
     img = torch.rand((1, 3, 224, 224))
     p0, p1, p2 = net(img)
     print(p0.shape, p1.shape, p2.shape)

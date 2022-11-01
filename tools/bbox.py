@@ -65,11 +65,11 @@ def get_objectness_label(img, gt_boxes, gt_labels, iou_threshold=0.7, anchors=No
     img_shape = img.shape
     batch_size = img_shape[0]
     im_height, im_width = img_shape[2:4]
-    num_anchors = gt_boxes.shape[1]
+    num_anchors = len(anchors) // 2
 
     # 计算单元格数量
-    num_rows = im_height // downsample
-    num_cols = im_width // downsample
+    num_rows = int(im_height // downsample)
+    num_cols = int(im_width // downsample)
 
     label_objectness = np.zeros((batch_size, num_anchors, num_rows, num_cols))
     label_classification = np.zeros((batch_size, num_anchors, num_classes, num_rows, num_cols))
@@ -102,7 +102,7 @@ def get_objectness_label(img, gt_boxes, gt_labels, iou_threshold=0.7, anchors=No
             inds = np.argsort(ious)
             k = inds[-1]
             label_objectness[n, k, i, j] = 1
-            c = gt_cls
+            c = int(gt_cls)
             label_classification[n, k, c, i, j] = 1.
 
             # 为objectness为1的位置设置位置偏移量
