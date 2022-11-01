@@ -149,7 +149,7 @@ def get_train_dataset():
     train_image_path = os.path.join(train_dir_path, 'IMAGES')
     train_annotation_path = os.path.join(train_dir_path, 'ANNOTATIONS')
     classname2idx = {'crazing': 0, 'inclusion': 1, 'pitted_surface': 2, 'scratches': 3, 'patches': 4,
-                     'rolled-in_scale': 5}
+                     'rolled-in_scale': 5, 'background': 6}
     idx2classname = [key for key in classname2idx.keys()]
     train_transform = Compose([
         ToTensor(),
