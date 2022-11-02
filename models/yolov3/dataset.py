@@ -5,6 +5,7 @@ import os
 import xml.etree.ElementTree as ET
 import cv2
 from torchvision.transforms.transforms import Compose, ToTensor, Normalize, Resize
+from PIL import Image
 
 
 def get_annotations(cname2cid, annotations_dir, image_dir):
@@ -103,17 +104,19 @@ def get_img_data_from_file(record):
     gt_bbox = record['gt_bbox']
     difficult = record['difficult']
 
-    img = cv2.imread(im_file)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # img = cv2.imread(im_file)
+    # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    to_tensor = ToTensor()
+    img = to_tensor(Image.open(im_file).convert('RGB'))
 
     # check if h and w in record equals that read from img
-    assert img.shape[0] == int(h), \
+    assert img.shape[1] == int(h), \
         "image height of {} inconsistent in record({}) and img file({})".format(
-            im_file, h, img.shape[0])
+            im_file, h, img.shape[1])
 
-    assert img.shape[1] == int(w), \
+    assert img.shape[2] == int(w), \
         "image width of {} inconsistent in record({}) and img file({})".format(
-            im_file, w, img.shape[1])
+            im_file, w, img.shape[2])
 
     gt_boxes, gt_labels = get_bbox(gt_bbox, gt_class)
 
@@ -145,14 +148,16 @@ class SilverDataset(Dataset):
 
 
 def get_train_dataset():
-    train_dir_path = 'D:\\code\\python\\datasets\\gangtie_challenge\\train\\train'
+    # train_dir_path = 'D:\\code\\python\\datasets\\gangtie_challenge\\train\\train'
+    # 1414
+    train_dir_path = '../../datasets/gangtie_challenge/train/train'
     train_image_path = os.path.join(train_dir_path, 'IMAGES')
     train_annotation_path = os.path.join(train_dir_path, 'ANNOTATIONS')
     classname2idx = {'crazing': 0, 'inclusion': 1, 'pitted_surface': 2, 'scratches': 3, 'patches': 4,
                      'rolled-in_scale': 5, 'background': 6}
     idx2classname = [key for key in classname2idx.keys()]
     train_transform = Compose([
-        ToTensor(),
+        # ToTensor(),
         Resize([224, 224]),
         Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
