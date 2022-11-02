@@ -56,7 +56,7 @@ def get_yolo_loss(pred_objectness, label_objectness, pred_classification, label_
     # torch.Size([16, 3, 7, 7])
     # torch.Size([16, 3, 14, 14])
     # torch.Size([16, 3, 28, 28])
-    total_loss = total_loss.sum(-1).sum(-1).mean(-1)
+    total_loss = total_loss.sum(-1).sum(-1).mean(-1).mean(-1)
     # print(total_loss.shape)
     # torch.Size([16])
     # torch.Size([16])
