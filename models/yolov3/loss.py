@@ -34,11 +34,13 @@ def get_yolo_loss(pred_objectness, label_objectness, pred_classification, label_
     loss_location = loss_location * scales
 
     loss_objectness = bce_loss(pred_objectness, label_objectness)
-    loss_cls = softmax_loss(pred_classification, label_classification)
+
+    loss_cls = softmax_loss(pred_classification.permute(0, 2, 1, 3, 4),
+                            label_classification.permute(0, 2, 1, 3, 4).softmax(dim=1))
     # print(loss_location.shape, loss_objectness.shape, loss_cls.shape)
     # torch.Size([16, 3, 7, 7])
     # torch.Size([16, 3, 7, 7])
-    # torch.Size([16, 7, 7, 7])
+    # torch.Size([16, 3, 7, 7])
 
     # pos_samples 只有在正样本的地方取值为1.，其它地方取值全为0.
     pos_objectness = label_objectness > 0
@@ -46,8 +48,18 @@ def get_yolo_loss(pred_objectness, label_objectness, pred_classification, label_
     pos_samples.requires_grad = False
     # print(pos_samples.shape)
     # torch.Size([16, 3, 7, 7])
+    # loss_objectness = loss_objectness * pos_samples
+    loss_location = loss_location * pos_samples
+    loss_cls = loss_cls * pos_samples
+    total_loss = loss_objectness + loss_cls + loss_location
+    # print(total_loss.shape)
+    # torch.Size([16, 3, 7, 7])
+    # torch.Size([16, 3, 14, 14])
+    # torch.Size([16, 3, 28, 28])
+    total_loss = total_loss.sum(-1).sum(-1).mean(-1)
+    # print(total_loss.shape)
+    # torch.Size([16])
+    # torch.Size([16])
+    # torch.Size([16])
 
-    # todo: use this pos sample mask.
-
-    return 0
-
+    return total_loss

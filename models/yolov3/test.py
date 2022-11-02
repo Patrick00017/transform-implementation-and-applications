@@ -52,6 +52,10 @@ def train():
                                                                                                            anchors=layer_anchor,
                                                                                                            num_classes=num_classes,
                                                                                                            downsample=downsample)
+                label_objectness.requires_grad = False
+                label_classification.requires_grad = False
+                label_location.requires_grad = False
+                label_scale.requires_grad = False
                 # print(
                 #     f'layer{i}, {label_objectness.shape, label_classification.shape, label_location.shape, label_scale.shape}')
                 # layer0, (torch.Size([16, 3, 7, 7]), torch.Size([16, 3, 7, 7, 7]), torch.Size([16, 3, 4, 7, 7]),
