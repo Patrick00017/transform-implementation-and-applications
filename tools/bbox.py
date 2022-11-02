@@ -124,6 +124,7 @@ def get_objectness_label(img, gt_boxes, gt_labels, iou_threshold=0.7, anchors=No
 
 
 def convert_txtytwth_2_xyxy(pred_location, anchors, num_classes, downsample):
+    device = 'cpu'
     batch_size = pred_location.shape[0]
     num_rows = pred_location.shape[-2]
     num_cols = pred_location.shape[-1]
@@ -132,6 +133,7 @@ def convert_txtytwth_2_xyxy(pred_location, anchors, num_classes, downsample):
     input_h = num_rows * downsample
     pred_location = pred_location.permute((0, 3, 4, 1, 2))
     pred_box = torch.zeros(pred_location.shape)
+    pred_box = pred_box.to(device)
     for n in range(batch_size):
         for i in range(num_rows):
             for j in range(num_cols):

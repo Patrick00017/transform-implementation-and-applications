@@ -3,7 +3,6 @@ import torch
 from torch.utils.data import Dataset
 import os
 import xml.etree.ElementTree as ET
-import cv2
 from torchvision.transforms.transforms import Compose, ToTensor, Normalize, Resize
 from PIL import Image
 

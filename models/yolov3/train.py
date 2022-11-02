@@ -32,7 +32,7 @@ def train():
     optimizer = SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=wd)
     print('start training...')
     for epoch in range(1, epoches + 1):
-        ultimate_loss = torch.tensor(0.0)
+        ultimate_loss = torch.tensor(0.0).to(device)
         total_num_images = 0
         epoch_start_time = time.time()
         for i, batch in enumerate(train_loader):
@@ -47,7 +47,7 @@ def train():
             # torch.Size([16, 60, 7, 7]) torch.Size([16, 60, 14, 14]) torch.Size([16, 60, 28, 28])
 
             # generate multi layer loss and sum together.
-            total_loss = torch.tensor(0.0).float()
+            total_loss = torch.tensor(0.0).float().to(device)
             downsample = 32
             anchors = [[40.6000, 31.5000, 54.6000, 69.3000, 130.5500, 114.1000],
                        [10.5000, 21.3500, 21.7000, 15.7500, 20.6500, 41.6500],
@@ -70,10 +70,10 @@ def train():
                 label_classification.requires_grad = False
                 label_location.requires_grad = False
                 label_scale.requires_grad = False
-                label_objectness = label_objectness.to(device)
-                label_classification = label_classification.to(device)
-                label_location = label_location.to(device)
-                label_scale = label_scale.to(device)
+                label_objectness = label_objectness.to('cpu')
+                label_classification = label_classification.to('cpu')
+                label_location = label_location.to('cpu')
+                label_scale = label_scale.to('cpu')
                 # print(
                 #     f'layer{i}, {label_objectness.shape, label_classification.shape, label_location.shape, label_scale.shape}')
                 # layer0, (torch.Size([16, 3, 7, 7]), torch.Size([16, 3, 7, 7, 7]), torch.Size([16, 3, 4, 7, 7]),
@@ -86,6 +86,9 @@ def train():
                 pred_objectness = torch.sigmoid(pred_objectness)
                 pred_classification = layer[:, :, 1:1 + num_classes, :, :]
                 pred_location = layer[:, :, 1 + num_classes:1 + num_classes + 4, :, :]
+                pred_objectness = pred_objectness.to('cpu')
+                pred_classification = pred_classification.to('cpu')
+                pred_location = pred_location.to('cpu')
                 # print(pred_objectness.shape, pred_classification.shape, pred_location.shape)
                 # torch.Size([16, 3, 7, 7])
                 # torch.Size([16, 3, 7, 7, 7])
@@ -106,19 +109,20 @@ def train():
 
                 # select iou threshold above box to keep
                 ret_inds = get_iou_above_thresh_inds(pred_box, gt_boxes)
+                ret_inds = ret_inds.to('cpu')
                 label_objectness = label_objectness_ignore(label_objectness, ret_inds)
                 l = get_yolo_loss(pred_objectness, label_objectness, pred_classification, label_classification,
                                   pred_location, label_location, label_scale)
+                l = l.to(device)
                 total_loss += l
                 downsample /= 2
-
             total_loss.backward()
             optimizer.step()
             batch_end_time = time.time()
             ultimate_loss += total_loss
             if i == 1:
                 print(f'batch{i}, loss: {total_loss.item()}, time cost: {batch_end_time - batch_start_time} seconds')
-            print(f'batch{i}, loss: {total_loss.item()}, time cost: {batch_end_time - batch_start_time} seconds')
+            # print(f'batch{i}, loss: {total_loss.item()}, time cost: {batch_end_time - batch_start_time} seconds')
         epoch_end_time = time.time()
         print(
             f'epoch: {epoch}, mean loss: {(ultimate_loss / total_num_images).item()}, '
